@@ -14,6 +14,7 @@ tasks:
     cmds:
       - task: cluster:create
       - task: crossplane:install
+      - task: argocd:install
 
   cluster:create:
     cmds:
@@ -25,6 +26,12 @@ tasks:
     cmds:
       - helm repo add crossplane-stable https://charts.crossplane.io/stable --force-update
       - helm upgrade --install crossplane crossplane-stable/crossplane --version {{.CROSSPLANE_VERSION}} --kube-context {{.CONTEXT}} --namespace crossplane-system --create-namespace --wait --timeout 5m
+  
+  argocd:install:
+    cmds:
+      - kubectl create namespace argocd
+      - kubectl apply -n argocd --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
 
   status:
     cmds:
