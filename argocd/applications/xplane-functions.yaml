@@ -1,14 +1,14 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: crossplane-components
+  name: crossplane-functions
   namespace: argocd
 spec:
   project: default
   source:
     repoURL: https://github.com/TeehLukas/crossplane-managed-grafana.git
     targetRevision: main
-    path: platform/crossplane
+    path: platform/crossplane/functions
     directory:
       recurse: true
   destination:
