@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: init-applications
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/TeehLukas/crossplane-managed-grafana.git
+    targetRevision: main
+    path: applications
+    directory:
+      exclude: initApplications.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      selfHeal: true
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: crossplane-managed-grafana-repository
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+type: Opaque
+stringData:
+  type: git
+  url: https://github.com/TeehLukas/crossplane-managed-grafana.git
