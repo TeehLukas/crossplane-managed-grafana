@@ -9,8 +9,6 @@ spec:
     repoURL: https://github.com/TeehLukas/crossplane-managed-grafana.git
     targetRevision: main
     path: argocd/applications
-    #directory:
-    #  exclude: initApplications.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
