@@ -29,8 +29,24 @@ tasks:
   
   argocd:install:
     cmds:
-      - kubectl create namespace argocd
-      - kubectl apply -n argocd --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+      - kubectl --context {{.CONTEXT}} create namespace argocd 
+      - kubectl --context {{.CONTEXT}} apply -n argocd --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+    status:
+      - kubectl --context {{.CONTEXT}} get namespace | grep argocd
+      - kubectl --context {{.CONTEXT}} get crds | grep "argoproj.io"
+
+  argocd:uninstall:
+    cmds:
+      - kubectl --context {{.CONTEXT}} delete -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+      - kubectl --context {{.CONTEXT}} delete namespace argocd
+
+  grafana:install:
+    cmds:
+      - podman run -d --name my-grafana -p 3000:3000 docker.io/grafana/grafana:latest
+    
+  grafana:up:
+    cmds:
+      - podman start my-grafana 
 
 
   status:
@@ -38,6 +54,7 @@ tasks:
       - kubectl --context {{.CONTEXT}} get nodes
       - kubectl --context {{.CONTEXT}} get pods -n crossplane-system
       - kubectl --context {{.CONTEXT}} get providers.pkg.crossplane.io
+      - kubectl --context {{.CONTEXT}} get crd applications.argoproj.io applicationsets.argoproj.io appprojects.argoproj.io
 
   down:
     desc: Delete local test cluster
