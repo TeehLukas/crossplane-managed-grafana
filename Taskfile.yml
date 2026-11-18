@@ -12,13 +12,14 @@ vars:
 
 tasks:
   up:
-    desc: Create the cluster, install Crossplane, and bootstrap Argo CD
+    desc: Set up the local GitOps lab
     cmds:
       - task: cluster:create
       - task: crossplane:install
       - task: argocd:bootstrap
 
   cluster:create:
+    desc: Create the kind cluster
     cmds:
       - |
         kind create cluster --name {{.CLUSTER}} --config=- --wait 120s <<'EOF'
@@ -36,12 +37,13 @@ tasks:
       - kind get clusters | grep -qx {{.CLUSTER}}
 
   crossplane:install:
+    desc: Install or upgrade Crossplane
     cmds:
       - helm repo add crossplane-stable https://charts.crossplane.io/stable --force-update
       - helm upgrade --install crossplane crossplane-stable/crossplane --version {{.CROSSPLANE_VERSION}} --kube-context {{.CONTEXT}} --namespace crossplane-system --create-namespace --wait --timeout 5m
   
   argocd:install:
-    desc: Install Argo CD and wait for it to be ready
+    desc: Install Argo CD and wait for readiness
     cmds:
       - >-
         kubectl --context {{.CONTEXT}} create namespace {{.ARGOCD_NAMESPACE}} --dry-run=client -o yaml |
@@ -53,7 +55,7 @@ tasks:
       - kubectl --context {{.CONTEXT}} -n {{.ARGOCD_NAMESPACE}} rollout status deployment/argocd-server --timeout=300s
 
   argocd:bootstrap:
-    desc: Apply the root Application, repository configuration, and local HTTPS Service
+    desc: Apply the Argo CD bootstrap manifest
     deps: [argocd:install]
     cmds:
       - kubectl --context {{.CONTEXT}} -n {{.ARGOCD_NAMESPACE}} apply -f bootstrap.yaml
@@ -67,20 +69,24 @@ tasks:
         printf '%s' "$password" | base64 --decode && printf '\n'
 
   argocd:uninstall:
+    desc: Remove Argo CD and its namespace
     cmds:
       - kubectl --context {{.CONTEXT}} -n {{.ARGOCD_NAMESPACE}} delete -f {{.ARGOCD_MANIFEST}}
       - kubectl --context {{.CONTEXT}} delete namespace {{.ARGOCD_NAMESPACE}}
 
   grafana:install:
+    desc: Create and start the Grafana container
     cmds:
       - podman run -d --name my-grafana -p 3000:3000 docker.io/grafana/grafana:latest
     
   grafana:up:
+    desc: Start the existing Grafana container
     cmds:
       - podman start my-grafana 
 
 
   status:
+    desc: Show cluster and platform status
     cmds:
       - kubectl --context {{.CONTEXT}} get nodes
       - kubectl --context {{.CONTEXT}} get pods -n crossplane-system
@@ -94,7 +100,7 @@ tasks:
       - kind delete cluster --name {{.CLUSTER}}
 
   reset:
-    desc: Recreate everything from scratch
+    desc: Delete and rebuild the local lab
     cmds:
       - task: down
       - task: up
