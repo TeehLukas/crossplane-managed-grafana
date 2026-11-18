@@ -7,18 +7,31 @@ vars:
   CLUSTER: crossplane-lab
   CONTEXT: kind-crossplane-lab
   CROSSPLANE_VERSION: 2.4.0
+  ARGOCD_NAMESPACE: argocd
+  ARGOCD_MANIFEST: https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
 tasks:
   up:
-    desc: Create cluster and install Crossplane
+    desc: Create the cluster, install Crossplane, and bootstrap Argo CD
     cmds:
       - task: cluster:create
       - task: crossplane:install
-      - task: argocd:install
+      - task: argocd:bootstrap
 
   cluster:create:
     cmds:
-      - kind create cluster --name {{.CLUSTER}} --wait 120s
+      - |
+        kind create cluster --name {{.CLUSTER}} --config=- --wait 120s <<'EOF'
+        apiVersion: kind.x-k8s.io/v1alpha4
+        kind: Cluster
+        nodes:
+          - role: control-plane
+            extraPortMappings:
+              - containerPort: 30443
+                hostPort: 8080
+                listenAddress: "127.0.0.1"
+                protocol: TCP
+        EOF
     status:
       - kind get clusters | grep -qx {{.CLUSTER}}
 
@@ -28,17 +41,35 @@ tasks:
       - helm upgrade --install crossplane crossplane-stable/crossplane --version {{.CROSSPLANE_VERSION}} --kube-context {{.CONTEXT}} --namespace crossplane-system --create-namespace --wait --timeout 5m
   
   argocd:install:
+    desc: Install Argo CD and wait for it to be ready
     cmds:
-      - kubectl --context {{.CONTEXT}} create namespace argocd 
-      - kubectl --context {{.CONTEXT}} apply -n argocd --server-side --force-conflicts -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-    status:
-      - kubectl --context {{.CONTEXT}} get namespace | grep argocd
-      - kubectl --context {{.CONTEXT}} get crds | grep "argoproj.io"
+      - >-
+        kubectl --context {{.CONTEXT}} create namespace {{.ARGOCD_NAMESPACE}} --dry-run=client -o yaml |
+        kubectl --context {{.CONTEXT}} apply -f -
+      - kubectl --context {{.CONTEXT}} -n {{.ARGOCD_NAMESPACE}} apply --server-side --force-conflicts -f {{.ARGOCD_MANIFEST}}
+      - kubectl --context {{.CONTEXT}} wait --for=condition=Established crd/applications.argoproj.io --timeout=120s
+      - kubectl --context {{.CONTEXT}} -n {{.ARGOCD_NAMESPACE}} rollout status deployment/argocd-repo-server --timeout=300s
+      - kubectl --context {{.CONTEXT}} -n {{.ARGOCD_NAMESPACE}} rollout status statefulset/argocd-application-controller --timeout=300s
+      - kubectl --context {{.CONTEXT}} -n {{.ARGOCD_NAMESPACE}} rollout status deployment/argocd-server --timeout=300s
+
+  argocd:bootstrap:
+    desc: Apply the root Application, repository configuration, and local HTTPS Service
+    deps: [argocd:install]
+    cmds:
+      - kubectl --context {{.CONTEXT}} -n {{.ARGOCD_NAMESPACE}} apply -f bootstrap.yaml
+
+  argocd:admin-password:
+    desc: Print the initial Argo CD admin password
+    silent: true
+    cmds:
+      - |
+        password=$(kubectl --context {{.CONTEXT}} -n {{.ARGOCD_NAMESPACE}} get secret argocd-initial-admin-secret -o jsonpath='{.data.password}') || exit 1
+        printf '%s' "$password" | base64 --decode && printf '\n'
 
   argocd:uninstall:
     cmds:
-      - kubectl --context {{.CONTEXT}} delete -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-      - kubectl --context {{.CONTEXT}} delete namespace argocd
+      - kubectl --context {{.CONTEXT}} -n {{.ARGOCD_NAMESPACE}} delete -f {{.ARGOCD_MANIFEST}}
+      - kubectl --context {{.CONTEXT}} delete namespace {{.ARGOCD_NAMESPACE}}
 
   grafana:install:
     cmds:
