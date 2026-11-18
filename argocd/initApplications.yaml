@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://github.com/TeehLukas/crossplane-managed-grafana.git
     targetRevision: main
-    path: applications
+    path: argocd
     directory:
       exclude: initApplications.yaml
   destination:
