@@ -5,10 +5,17 @@ metadata:
   namespace: grafana
 spec:
   forProvider:
-    name: Lab-2
+    name: Dummy-Organization
+    adminUser: admin
+    createUsers: true
+    admins:
+      - org-admin@example.com
     editors:
-      - user1
-      - user2
+      - org-editor@example.com
+    viewers:
+      - org-viewer@example.com
+    usersWithoutAccess:
+      - org-no-access@example.com
   providerConfigRef:
     kind: ProviderConfig
     name: grafana
