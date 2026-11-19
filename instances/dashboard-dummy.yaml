@@ -3,6 +3,8 @@ kind: Dashboard
 metadata:
   name: lab-dummy-dashboard
   namespace: grafana
+  annotations:
+    crossplane.io/poll-interval: "15s"
 spec:
   forProvider:
     organizationRef:
