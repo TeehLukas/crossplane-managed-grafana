@@ -60,7 +60,7 @@ type: Opaque
 stringData:
   credentials: |
     {
-      "url": "http://localhost:3000/",
+      "url": "http://169.254.1.2:3000/",
       "auth": "admin:admin123"
     }
 ---
