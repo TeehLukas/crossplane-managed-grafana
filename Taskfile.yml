@@ -6,7 +6,6 @@ version: '3'
 vars:
   CLUSTER: crossplane-lab
   CONTEXT: kind-crossplane-lab
-  CROSSPLANE_VERSION: 2.4.0
   ARGOCD_NAMESPACE: argocd
   ARGOCD_MANIFEST: https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
@@ -15,7 +14,6 @@ tasks:
     desc: Set up the local GitOps lab
     cmds:
       - task: cluster:create
-      - task: crossplane:install
       - task: argocd:bootstrap
 
   cluster:create:
@@ -35,13 +33,8 @@ tasks:
         EOF
     status:
       - kind get clusters | grep -qx {{.CLUSTER}}
+    silent: true
 
-  crossplane:install:
-    desc: Install or upgrade Crossplane
-    cmds:
-      - helm repo add crossplane-stable https://charts.crossplane.io/stable --force-update
-      - helm upgrade --install crossplane crossplane-stable/crossplane --version {{.CROSSPLANE_VERSION}} --kube-context {{.CONTEXT}} --namespace crossplane-system --create-namespace --wait --timeout 5m
-  
   argocd:install:
     desc: Install Argo CD and wait for readiness
     cmds:
