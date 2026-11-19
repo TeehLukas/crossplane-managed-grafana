@@ -5,7 +5,7 @@ metadata:
   namespace: grafana
 spec:
   forProvider:
-    name: Lab
+    name: Lab-2
   providerConfigRef:
     kind: ProviderConfig
     name: grafana
