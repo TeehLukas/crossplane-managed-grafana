@@ -4,3 +4,5 @@ metadata:
   name: grafana-provider
 spec:
   package: xpkg.upbound.io/grafana/provider-grafana:v2.18.1
+  runtimeConfigRef:
+    name: grafana-provider
