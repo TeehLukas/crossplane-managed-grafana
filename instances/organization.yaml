@@ -6,6 +6,9 @@ metadata:
 spec:
   forProvider:
     name: Lab-2
+    editors:
+      - user1
+      - user2
   providerConfigRef:
     kind: ProviderConfig
     name: grafana
