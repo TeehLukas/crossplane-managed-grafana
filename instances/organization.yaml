@@ -1,0 +1,11 @@
+apiVersion: oss.grafana.m.crossplane.io/v1alpha1
+kind: Organization
+metadata:
+  name: lab
+  namespace: grafana
+spec:
+  forProvider:
+    name: Lab
+  providerConfigRef:
+    kind: ProviderConfig
+    name: grafana
