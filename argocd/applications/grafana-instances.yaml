@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: xplane-instances
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/TeehLukas/crossplane-managed-grafana.git
+    targetRevision: main
+    path: instances
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: grafana
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - SkipDryRunOnMissingResource=true
+    retry:
+      limit: -1
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
