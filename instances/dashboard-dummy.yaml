@@ -11,7 +11,7 @@ spec:
       name: lab
       namespace: grafana
     message: "Dummy-Dashboard angelegt"
-    overwrite: false
+    overwrite: true
     configJson: |
       {
         "uid": "lab-dummy-dashboard",
