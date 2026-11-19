@@ -45,3 +45,34 @@ spec:
       port: 443
       targetPort: 8080
       nodePort: 30443
+--- # Grafana bootstrap
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: grafana
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grafana-credentials
+  namespace: grafana
+type: Opaque
+stringData:
+  credentials: |
+    {
+      "url": "http://localhost:3000/",
+      "auth": "admin:admin123"
+    }
+---
+apiVersion: grafana.m.crossplane.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: grafana
+  namespace: grafana
+spec:
+  credentials:
+    source: Secret
+    secretRef:
+      name: grafana-credentials
+      key: credentials
+      namespace: grafana
